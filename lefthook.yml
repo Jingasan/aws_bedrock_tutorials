@@ -1,0 +1,15 @@
+# コミット直前の処理
+pre-commit:
+  parallel: true
+  commands:
+    # シークレットスキャン
+    trivy-secret-scan:
+      run: trivy fs --scanners secret .
+
+# プッシュ直前の処理
+pre-push:
+  parallel: true
+  commands:
+    # フルスキャン（詳細は trivy.yaml を参照）
+    trivy-all-scan:
+      run: trivy fs .

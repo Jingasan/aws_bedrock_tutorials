@@ -1,0 +1,44 @@
+[settings]
+# mise install時にmise.lockファイルを利用してツールをインストールする設定
+# mise.lockを利用することで、ツールのバージョンを固定でき、ローカルやCIの環境でツールのバージョンが食い違ってしまうのを防げる。
+# また、インストール時にmise.lockに記載のチェックサムと一致しない場合はエラーになるため、配布サーバーが侵害されて別のバイナリに差し替えられても検知できる。
+lockfile = true
+# mise.lockにすでに記録されているProvenance（供給元証明）をインストール毎に毎回再検証する設定
+locked_verify_provenance = true
+# 新規リリース直後のツール導入を防ぐため、リリースから7日経過するまでインストールしない
+minimum_release_age = "7d"
+# 脆弱性修正版がリリース後7日未満のツールは、上記の待機期間より脆弱性対応を優先するため除外する
+# node: 24.18.1（2026-07-29 リリース）の脆弱性対応。2026-08-05 以降は除外不要なので node を削除する
+minimum_release_age_excludes = ["node"]
+
+# 本プロジェクトで利用するツール
+[tools]
+aws-cli = { version = "2", symlink_bins = "true", os = ["linux"] }
+node = "24"
+lefthook = "2"
+terraform = "1"
+terraform-ls = "0"
+trivy = "0"
+
+# OSパッケージ、ClaudeCode、ツール、NPMパッケージのセットアップ
+# mise run setup コマンドで実行
+[tasks.setup]
+run = [
+  "mise run os-upgrade",
+  "mise install"
+]
+
+# OS パッケージの更新（パッケージマネージャーを自動判定。mise を apt/dnf でインストールしていれば mise 自身も更新される）
+# mise run os-upgrade コマンドで実行
+[tasks.os-upgrade]
+run = "if command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get dist-upgrade -y; elif command -v dnf >/dev/null 2>&1; then sudo dnf upgrade --refresh -y; else echo '対応していないパッケージマネージャーです（apt / dnf のみサポート）' >&2; exit 1; fi"
+
+# ツールの一括更新
+# mise.tomlのバージョンレンジはアップグレードしない。ツールのメジャーバージョン未満だけアップグレードし、mise.lockを更新
+# また、グローバルスコープのツールは対象にしない。プロジェクト以下のツールだけを対象とする。
+# mise run upgrade コマンドで実行
+[tasks.upgrade]
+run = [
+  "mise run os-upgrade",
+  "mise upgrade --local"
+]

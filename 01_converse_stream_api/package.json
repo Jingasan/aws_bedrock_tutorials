@@ -1,0 +1,22 @@
+{
+  "name": "01_converse_stream_script",
+  "version": "1.0.0",
+  "description": "AWS Bedrock ConverseStream API を使った対話型チャットスクリプト",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "chat": "node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1115.0",
+    "@aws-sdk/credential-providers": "^3.1115.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}

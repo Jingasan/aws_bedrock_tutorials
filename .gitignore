@@ -1,0 +1,49 @@
+# Temporary files
+tmp
+
+# Logs
+logs
+*.log
+
+# Archive files
+*.zip
+
+# Node.js パッケージ
+node_modules
+
+# ビルド成果物
+dist
+build
+
+# Terraform 作業ディレクトリ（provider バイナリ・モジュールキャッシュ等）
+**/.terraform/*
+**/.terraform.tfstate.lock.info
+
+# state ファイル（remote backend 運用のため、ローカルに残ったものは取り込まない）
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# plan 出力（バイナリ・機密値を含み得る）
+tfplan
+*.tfplan
+*.tfplan.*
+
+# crash log
+crash.log
+crash.*.log
+
+# CLI 設定ファイル
+.terraformrc
+terraform.rc
+
+# 機密情報
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db

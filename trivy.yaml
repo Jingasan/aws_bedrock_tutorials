@@ -1,0 +1,40 @@
+# ==========================================================================================
+# Trivy の設定ファイル
+# https://trivy.dev/docs/latest/guide/references/configuration/config-file/
+# ==========================================================================================
+
+# 検出時の終了コード（1: CIを失敗させる）
+# 注意: vuln/secret/misconfig/license のいずれかで severity 以上が検出されると発火する
+exit-code: 1
+
+# 検出対象の深刻度（CRITICAL・HIGH のみ対象とし、MEDIUM以下は無視する）
+severity:
+  - HIGH
+  - CRITICAL
+
+# スキャナーの設定
+scan:
+  # 有効にするスキャナー
+  # vuln:      依存パッケージの既知の脆弱性（CVE）
+  # secret:    ソースコード・設定ファイルに混入したシークレット（APIキー、トークン等）
+  # misconfig: Dockerfile・IaC 設定ファイルのセキュリティ設定ミス
+  # license:   依存パッケージのOSSライセンス（GPL等のコピーレフト系ライセンスを検出）
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+    - license
+  skip-dirs:
+    # ルート bun.lock に推移依存も含めて全パッケージが記録されているため、
+    # node_modules を除外しても npm 系の脆弱性検出は完全に網羅される。
+    # 同梱 lockfile・Dockerfile による誤検知も同時に抑制される。
+    - "**/node_modules"
+
+# 脆弱性スキャナーの設定
+vulnerability:
+  # false: 修正版が未リリースの脆弱性も検出してエラーとする（デフォルト値だが意図明示のため明記）
+  ignore-unfixed: false
+
+# ライセンス分類の精度向上（全文照合）
+license:
+  full: true

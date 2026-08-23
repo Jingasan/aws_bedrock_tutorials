@@ -11,6 +11,11 @@ logs
 # Node.js パッケージ
 node_modules
 
+# Mastra Memory の会話履歴 DB (libsql/SQLite。WAL/共有メモリの派生ファイルを含む)
+memory.db
+*.db-shm
+*.db-wal
+
 # ビルド成果物
 dist
 build

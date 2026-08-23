@@ -1,0 +1,23 @@
+{
+  "name": "03_ai_sdk_bedrock",
+  "version": "1.0.0",
+  "description": "Vercel AI SDK (@ai-sdk/amazon-bedrock) を使った Bedrock Claude Sonnet 5 対話型チャットスクリプト",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "chat": "node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^5.0.61",
+    "@aws-sdk/credential-providers": "^3.1116.0",
+    "ai": "^7.0.77"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}

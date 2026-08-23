@@ -8,12 +8,12 @@
 2. 開発内容は tmp/task/<日時:YYYYMMDD*hhmmss>*<タスク内容要約>.md にタスクとして細分化して出力すること。タスクファイルには以下の項目を必ずチェックボックス形式で含めること：
 
 - 実装タスクの各ステップ
-- `terraform fmt`, `terraform validate` の実施
+- `npm run typecheck`, `terraform fmt`, `terraform validate` の実施
 - 結果サマリーの記載
 
 3. tmp/task/<日時:YYYYMMDD*hhmmss>*<タスク内容要約>.md を出力した後、タスク実行計画について、これで良いか確認を求めること。
 4. タスクが完了する度に、上記タスクファイル(.md)にタスク進捗を記載すること。
-5. `terraform fmt`, `terraform validate` を行うこと。
+5. `npm run typecheck`, `terraform fmt`, `terraform validate` を行うこと。
 
 - エラーがあれば修正すること。
 

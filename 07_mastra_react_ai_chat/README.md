@@ -33,8 +33,8 @@ Amazon Bedrock (global.anthropic.claude-sonnet-5)
 ## 前提
 
 - Node.js 22.13 以上
-- `../terraform/` の IAM ポリシー (`bedrock:InvokeModel` / `InvokeModelWithResponseStream`) が
-  適用済みで、利用する AWS プロファイルにアタッチされていること
+- 利用する AWS プロファイルに `bedrock:InvokeModel` / `InvokeModelWithResponseStream` の
+  呼び出し権限を持つ IAM ポリシーがアタッチされていること (手動で用意)
 - AWS 認証情報が標準チェーン (プロファイル等) で解決できること
 
 ## 起動方法

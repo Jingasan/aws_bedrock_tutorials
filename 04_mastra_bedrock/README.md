@@ -8,7 +8,6 @@
 - エンドポイント: bedrock-runtime (`https://bedrock-runtime.ap-northeast-1.amazonaws.com`)
 - フレームワーク: `@mastra/core` の `Agent` + `@ai-sdk/amazon-bedrock/anthropic` (`bedrockAnthropic`)
 - 認証: AWS プロファイル `default` (`@aws-sdk/credential-providers` の `fromNodeProviderChain` で解決、SigV4 署名は SDK が自動処理)
-- `terraform/`: InvokeModel / InvokeModelWithResponseStream 許可の IAM ポリシー (03 と同一権限)
 - `src/`: TypeScript の対話型チャットスクリプト (Node.js 24 のネイティブ型ストリッピングで直接実行)
 
 > **03 との違い (フレームワーク)**: Mastra は AI SDK の上に乗るエージェントフレームワークです。AI SDK プロバイダーのモデルインスタンス (`bedrockAnthropic(MODEL_ID)`) をそのまま `Agent` の `model` に渡せるため、モデル呼び出し・認証まわりのコードは 03 と共通です。一方で 03 が呼び出しごとに `streamText({ model, system, messages })` へ全設定を渡していたのに対し、Mastra ではモデル・システムプロンプト (`instructions`)・(将来的にはツールやメモリも) を `Agent` という再利用可能な単位に束ね、呼び出し側は `agent.stream(messages)` だけで済みます。
@@ -20,29 +19,12 @@
 ## 前提条件
 
 1. AWS プロファイル `default` が設定済みであること (`aws sts get-caller-identity` で確認)
-2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること (Terraform では有効化できません)
+2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること
+3. 実行ユーザーに `bedrock:InvokeModel` / `InvokeModelWithResponseStream` の呼び出し権限があること (03 と同一権限のため、03 で用意済みであればそのまま利用可)
 
 ## セットアップ
 
-### 1. Terraform でリソースを作成
-
-03 のポリシーをアタッチ済みであれば、権限は同一のためこの手順はスキップできます。
-
-```bash
-cd terraform
-terraform init
-terraform apply
-```
-
-作成されるリソース:
-
-| リソース | 用途 |
-|---|---|
-| `aws_iam_policy.invoke_claude` | InvokeModel / InvokeModelWithResponseStream の呼び出し許可ポリシー |
-
-実行ユーザーに Bedrock の呼び出し権限がない場合は、output の `invoke_policy_arn` のポリシーを対象の IAM ユーザー/ロールにアタッチしてください。
-
-### 2. 依存パッケージのインストール
+### 1. 依存パッケージのインストール
 
 ```bash
 npm install

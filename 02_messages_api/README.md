@@ -7,39 +7,23 @@ Claude 5 系専用の新しい Bedrock エンドポイント (bedrock-mantle) �
 - モデル: Claude Sonnet 5 (`anthropic.claude-sonnet-5`、グローバルルーティング)
 - エンドポイント: `https://bedrock-mantle.us-east-1.api.aws/anthropic/v1/messages`
 - 認証: AWS プロファイル `default` (SigV4 署名は SDK が自動処理)
-- `terraform/`: Messages API 呼び出し許可の IAM ポリシー
 - `src/`: TypeScript の対話型チャットスクリプト (Node.js 24 のネイティブ型ストリッピングで直接実行)
 
 > **01 との違い**: Claude 5 系 (Opus 5 / Sonnet 5 など) は従来型の Converse/ConverseStream API では利用できず、Messages API ベースの新しい Bedrock エンドポイント (bedrock-mantle) 経由で提供されます。リクエスト/レスポンスの形式は Anthropic ファーストパーティ API と同一で、SDK も AWS SDK ではなく Anthropic の `@anthropic-ai/bedrock-sdk` (`AnthropicBedrockMantle` クライアント) を使います。IAM の認可アクションも `bedrock:InvokeModel*` ではなく `bedrock-mantle:CreateInference` (対象はプロジェクトリソース) に変わります。
 
-> **ルーティングと料金**: グローバルルーティング (`anthropic.claude-sonnet-5`) が基本料金で最安・最高可用性です。データレジデンシー要件がある場合は日本国内ルーティングの `jp.anthropic.claude-sonnet-5` を指定できますが、グローバル比で 10% のプレミアム料金がかかります。また、bedrock-mantle はアプリケーション推論プロファイル (01 で使ったコスト配分タグ付きプロファイル) に非対応のため、Terraform では IAM ポリシーのみ作成します。
+> **ルーティングと料金**: グローバルルーティング (`anthropic.claude-sonnet-5`) が基本料金で最安・最高可用性です。データレジデンシー要件がある場合は日本国内ルーティングの `jp.anthropic.claude-sonnet-5` を指定できますが、グローバル比で 10% のプレミアム料金がかかります。また、bedrock-mantle はアプリケーション推論プロファイル (01 で使ったコスト配分タグ付きプロファイル) に非対応です。
 
 > **エンドポイントリージョンについて**: bedrock-mantle はリージョンごとに独自のモデルカタログを持ち、推論プロファイル ID (`jp.` / `global.` プレフィックス) は受け付けません。2026-08 時点で東京 (`ap-northeast-1`) の mantle エンドポイントは Claude Sonnet 5 未提供 (404) のため、デフォルトの接続先は提供済みの `us-east-1` にしています。モデルはグローバルルーティングのため、推論の実行リージョン自体はエンドポイントに固定されません。東京で提供が始まったら `AWS_REGION=ap-northeast-1` で切り替えられます。
 
 ## 前提条件
 
 1. AWS プロファイル `default` が設定済みであること (`aws sts get-caller-identity` で確認)
-2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること (Terraform では有効化できません)
+2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること
+3. 実行ユーザーに Messages API (`bedrock-mantle:CreateInference`) の呼び出し権限があること
 
 ## セットアップ
 
-### 1. Terraform でリソースを作成
-
-```bash
-cd terraform
-terraform init
-terraform apply
-```
-
-作成されるリソース:
-
-| リソース | 用途 |
-|---|---|
-| `aws_iam_policy.invoke_claude` | Messages API (`bedrock-mantle:CreateInference`) の呼び出し許可ポリシー |
-
-実行ユーザーに bedrock-mantle の呼び出し権限がない場合は、output の `invoke_policy_arn` のポリシーを対象の IAM ユーザー/ロールにアタッチしてください。
-
-### 2. 依存パッケージのインストール
+### 1. 依存パッケージのインストール
 
 ```bash
 npm install

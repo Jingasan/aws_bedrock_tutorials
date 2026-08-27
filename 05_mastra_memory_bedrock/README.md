@@ -9,7 +9,6 @@
 - フレームワーク: `@mastra/core` の `Agent` + `@ai-sdk/amazon-bedrock/anthropic` (`bedrockAnthropic`)
 - メモリ: `@mastra/memory` の `Memory` + `@mastra/libsql` の `LibSQLStore` (`memory.db` に永続化)
 - 認証: AWS プロファイル `default` (`@aws-sdk/credential-providers` の `fromNodeProviderChain` で解決、SigV4 署名は SDK が自動処理)
-- `terraform/`: InvokeModel / InvokeModelWithResponseStream 許可の IAM ポリシー (03/04 と同一権限)
 - `src/`: TypeScript の対話型チャットスクリプト (Node.js 24 のネイティブ型ストリッピングで直接実行)
 
 > **04 との違い (Memory)**: 04 は `ModelMessage[]` 配列を手動で push/pop し、毎ターン全履歴を `agent.stream(messages)` に渡していました。05 では `Agent` に `memory` を渡し、`agent.stream()` には**新しい質問文字列だけ**を渡して `memory: { thread, resource }` で会話スレッドを指定します。履歴の保存と、直近 `lastMessages` 件 (既定 10 件) のコンテキスト注入は Mastra が自動で行います。**stream に履歴配列を渡してはいけません** (Memory の注入と二重になります)。
@@ -25,29 +24,12 @@
 ## 前提条件
 
 1. AWS プロファイル `default` が設定済みであること (`aws sts get-caller-identity` で確認)
-2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること (Terraform では有効化できません)
+2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること
+3. 実行ユーザーに `bedrock:InvokeModel` / `InvokeModelWithResponseStream` の呼び出し権限があること (03/04 と同一権限のため、いずれかで用意済みであればそのまま利用可)
 
 ## セットアップ
 
-### 1. Terraform でリソースを作成
-
-03 または 04 のポリシーをアタッチ済みであれば、権限は同一のためこの手順はスキップできます。
-
-```bash
-cd terraform
-terraform init
-terraform apply
-```
-
-作成されるリソース:
-
-| リソース | 用途 |
-|---|---|
-| `aws_iam_policy.invoke_claude` | InvokeModel / InvokeModelWithResponseStream の呼び出し許可ポリシー |
-
-実行ユーザーに Bedrock の呼び出し権限がない場合は、output の `invoke_policy_arn` のポリシーを対象の IAM ユーザー/ロールにアタッチしてください。
-
-### 2. 依存パッケージのインストール
+### 1. 依存パッケージのインストール
 
 ```bash
 npm install

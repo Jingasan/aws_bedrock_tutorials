@@ -8,7 +8,6 @@
 - エンドポイント: bedrock-runtime (`https://bedrock-runtime.ap-northeast-1.amazonaws.com`)
 - SDK: `ai` (`streamText`) + `@ai-sdk/amazon-bedrock/anthropic` (`bedrockAnthropic`)
 - 認証: AWS プロファイル `default` (`@aws-sdk/credential-providers` の `fromNodeProviderChain` で解決、SigV4 署名は SDK が自動処理)
-- `terraform/`: InvokeModel / InvokeModelWithResponseStream 許可の IAM ポリシー
 - `src/`: TypeScript の対話型チャットスクリプト (Node.js 24 のネイティブ型ストリッピングで直接実行)
 
 > **02 との違い (SDK)**: AI SDK はプロバイダー抽象化レイヤーを持つマルチプロバイダーの TypeScript ツールキットです。`bedrockAnthropic` サブプロバイダーは bedrock-runtime の InvokeModel / InvokeModelWithResponseStream を Anthropic Messages API ネイティブ形式で呼び出すため、Anthropic API と同等の機能を AI SDK の統一インターフェース (`streamText` / `generateText`) から利用できます。なお AI SDK の `bedrockMantle` サブプロバイダーは OpenAI 互換モデル (`openai.gpt-oss-*` 等) 専用のため、02 の bedrock-mantle エンドポイントの直接の置き換えではありません。
@@ -20,27 +19,12 @@
 ## 前提条件
 
 1. AWS プロファイル `default` が設定済みであること (`aws sts get-caller-identity` で確認)
-2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること (Terraform では有効化できません)
+2. [Bedrock コンソールのモデルアクセス](https://console.aws.amazon.com/bedrock/home#/modelaccess) で Anthropic Claude Sonnet 5 が有効化されていること
+3. 実行ユーザーに `bedrock:InvokeModel` / `InvokeModelWithResponseStream` の呼び出し権限があること
 
 ## セットアップ
 
-### 1. Terraform でリソースを作成
-
-```bash
-cd terraform
-terraform init
-terraform apply
-```
-
-作成されるリソース:
-
-| リソース | 用途 |
-|---|---|
-| `aws_iam_policy.invoke_claude` | InvokeModel / InvokeModelWithResponseStream の呼び出し許可ポリシー |
-
-実行ユーザーに Bedrock の呼び出し権限がない場合は、output の `invoke_policy_arn` のポリシーを対象の IAM ユーザー/ロールにアタッチしてください。
-
-### 2. 依存パッケージのインストール
+### 1. 依存パッケージのインストール
 
 ```bash
 npm install

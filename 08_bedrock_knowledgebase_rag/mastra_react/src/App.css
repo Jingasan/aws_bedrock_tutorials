@@ -1,0 +1,167 @@
+/*============================================================
+  チャット UI のスタイル
+  カラーやフォントのトークンは index.css の :root 変数
+  (ライト / ダークテーマ対応) をそのまま利用する。
+============================================================*/
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.chat-header {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-header h1 {
+  font-size: 24px;
+  margin: 0 0 4px;
+  letter-spacing: normal;
+}
+
+.chat-header p {
+  font-size: 14px;
+}
+
+/* メッセージ一覧 (残り高さを占有し縦スクロール) */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+.chat-empty,
+.chat-status {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.chat-error {
+  color: #dc2626;
+  font-size: 14px;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+
+.chat-message.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.chat-message.assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.chat-role {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.chat-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  color: var(--text-h);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-message.user .chat-bubble {
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+}
+
+.chat-message.assistant .chat-bubble {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+}
+
+/* 検索ツールの呼び出し状況・参照した規則 (回答本文と区別するため小さく淡色で表示) */
+.chat-tool {
+  display: block;
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent-border);
+  color: var(--text);
+  font-size: 13px;
+  white-space: normal;
+}
+
+.chat-tool summary {
+  cursor: pointer;
+}
+
+.chat-tool ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
+.chat-tool code {
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--accent-bg);
+}
+
+.chat-tool-error {
+  color: #dc2626;
+  border-left-color: #dc2626;
+}
+
+.chat-score {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+/* 入力フォーム (画面下部に固定表示) */
+.chat-form {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.chat-input {
+  flex: 1;
+  font: inherit;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.chat-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.chat-send {
+  font: inherit;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  color: var(--accent);
+  background: var(--accent-bg);
+  cursor: pointer;
+}
+
+.chat-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

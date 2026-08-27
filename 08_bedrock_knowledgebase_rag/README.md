@@ -28,7 +28,6 @@
   - `s3_vectors.tf` … ベクトルストア (S3 Vectors バケット + インデックス)
   - `iam_kb_role.tf` … Knowledge Base のサービスロール (最小権限)
   - `knowledge_base.tf` … Knowledge Base 本体と S3 データソース (階層チャンク)
-  - `iam_user_policy.tf` … アプリ・運用者向け IAM ポリシー (Claude 呼び出し / Retrieve / 取り込み / PDF アップロード)
 - `mastra_react/` … 07 をベースにしたアプリ
   - `src/mastra/tools/search-rules-tool.ts` … Retrieve API を呼ぶ Mastra ツール
   - `src/mastra/agents/rules-agent.ts` … 検索ツールを使って規則 QA を行うエージェント (Agentic RAG)
@@ -78,6 +77,10 @@ Knowledge Bases には検索と回答生成をまとめて行う `RetrieveAndGen
   `parsing_configuration` を有効化する。別途推論コストが発生する)
 - AWS 認証情報が標準チェーン (プロファイル等) で解決できること
 - Bedrock コンソールで `Titan Text Embeddings V2` と `Claude Sonnet 5` のモデルアクセスが有効なこと
+- 実行ユーザーに Claude 呼び出し (`bedrock:InvokeModel` / `InvokeModelWithResponseStream`)、
+  検索 (`bedrock:Retrieve`)、取り込みジョブ管理 (`bedrock:StartIngestionJob` / `GetIngestionJob` /
+  `ListIngestionJobs`)、PDF アップロード (`s3:ListBucket` / `PutObject` / `DeleteObject`、対象はデータソースバケット)
+  の呼び出し権限があること (手動で用意)
 
 ## 手順
 
@@ -88,12 +91,6 @@ cd terraform
 terraform init
 terraform plan
 terraform apply
-```
-
-出力された `app_policy_arn` を実行ユーザーにアタッチする。
-
-```bash
-aws iam attach-user-policy --policy-arn "$(terraform output -raw app_policy_arn)" --user-name <ユーザー名>
 ```
 
 ### 2. PDF をアップロードして取り込む

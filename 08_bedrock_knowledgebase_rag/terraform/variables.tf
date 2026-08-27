@@ -38,7 +38,7 @@ variable "project_name" {
   }
 }
 
-# 生成 (チャット) 側の基盤モデル ID。main 側で global. プレフィックスを付けて
+# 生成 (チャット) 側の基盤モデル ID。outputs.tf 側で global. プレフィックスを付けて
 # グローバル推論プロファイル ID (global.anthropic.claude-sonnet-5) を組み立てる (07 と同じ)。
 variable "base_model_id" {
   description = "チャット応答生成に使う Claude の基盤モデル ID (global プレフィックスなし)"
@@ -48,7 +48,7 @@ variable "base_model_id" {
   # global. の二重付与 (global.global.…) は apply が通って実行時にだけ失敗するため事前に弾く
   validation {
     condition     = !startswith(var.base_model_id, "global.")
-    error_message = "base_model_id には global. プレフィックスを含めないこと (iam_user_policy.tf 側で付与する)。"
+    error_message = "base_model_id には global. プレフィックスを含めないこと (outputs.tf 側で付与する)。"
   }
 }
 

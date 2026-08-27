@@ -1,14 +1,12 @@
 #============================================================
 # 出力値
-# 実行ユーザーへのポリシーアタッチ、PDF アップロードと取り込み、
-# アプリの環境変数設定に必要な情報を出力する。
+# PDF アップロードと取り込み、アプリの環境変数設定に必要な情報を出力する。
 #============================================================
 
-# 実行ユーザー/ロールに手動アタッチする IAM ポリシーの ARN
-# (例: aws iam attach-user-policy --policy-arn <この値> --user-name <ユーザー名>)
-output "app_policy_arn" {
-  description = "実行ユーザー/ロールにアタッチする IAM ポリシーの ARN"
-  value       = aws_iam_policy.app.arn
+# グローバル推論プロファイルの ID を組み立てるローカル値 (07 と同じ)。
+# 東京は In-Region / jp Geo 未提供のため global を使う。
+locals {
+  global_inference_profile_id = "global.${var.base_model_id}"
 }
 
 # アプリ側の AWS_REGION 環境変数に合わせるリージョン

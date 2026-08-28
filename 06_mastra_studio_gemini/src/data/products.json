@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "ワイヤレスマウス",
+    "price": 3500,
+    "category": "PC周辺機器",
+    "stock": 45
+  },
+  {
+    "id": 2,
+    "name": "メカニカルキーボード",
+    "price": 12000,
+    "category": "PC周辺機器",
+    "stock": 20
+  },
+  {
+    "id": 3,
+    "name": "27インチ 4Kモニター",
+    "price": 45000,
+    "category": "ディスプレイ",
+    "stock": 15
+  },
+  {
+    "id": 4,
+    "name": "USB-C ハブ 7in1",
+    "price": 3200,
+    "category": "PC周辺機器",
+    "stock": 100
+  },
+  {
+    "id": 5,
+    "name": "ノイズキャンセリングヘッドホン",
+    "price": 28000,
+    "category": "オーディオ",
+    "stock": 8
+  }
+]

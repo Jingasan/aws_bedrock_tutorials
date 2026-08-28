@@ -8,8 +8,7 @@ locked_verify_provenance = true
 # 新規リリース直後のツール導入を防ぐため、リリースから7日経過するまでインストールしない
 minimum_release_age = "7d"
 # 脆弱性修正版がリリース後7日未満のツールは、上記の待機期間より脆弱性対応を優先するため除外する
-# node: 24.18.1（2026-07-29 リリース）の脆弱性対応。2026-08-05 以降は除外不要なので node を削除する
-minimum_release_age_excludes = ["node"]
+minimum_release_age_excludes = []
 
 # 本プロジェクトで利用するツール
 [tools]

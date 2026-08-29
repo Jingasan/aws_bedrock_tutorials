@@ -28,7 +28,7 @@ Mastra Studio (mastra dev のプレイグラウンド) ──> rulesAgent + sear
   - `s3_vectors.tf` … ベクトルストア (S3 Vectors バケット + インデックス)
   - `iam_kb_role.tf` … Knowledge Base のサービスロール (最小権限)
   - `knowledge_base.tf` … Knowledge Base 本体と S3 データソース (階層チャンク)
-- `mastra_react/` … Mastra サーバー本体 (専用フロントエンドは持たず Mastra Studio から利用する)
+- `mastra_studio/` … Mastra サーバー本体 (専用フロントエンドは持たず Mastra Studio から利用する)
   - `src/mastra/tools/search-rules-tool.ts` … Retrieve API を呼ぶ Mastra ツール
   - `src/mastra/agents/rules-agent.ts` … 検索ツールを使って規則 QA を行うエージェント (Agentic RAG)。
     会話履歴は `@mastra/memory` + `@mastra/libsql` で `memory.db` に永続化する ([05_mastra_memory_bedrock](../05_mastra_memory_bedrock/README.md) と同じ構成)
@@ -117,7 +117,7 @@ aws bedrock-agent list-ingestion-jobs \
 ### 3. アプリを起動する
 
 ```bash
-cd ../mastra_react
+cd ../mastra_studio
 npm install
 cp .env.example .env
 # .env の BEDROCK_KNOWLEDGE_BASE_ID に terraform output knowledge_base_id の値を設定する
@@ -132,7 +132,7 @@ npm run dev
 Claude が `searchRules` ツールで規則を検索し (ツール呼び出しの経過と参照ファイルが表示される)、
 検索結果に基づいて回答する。
 
-会話履歴は Memory により `mastra_react/memory.db` (SQLite/libsql) に永続化されるため、
+会話履歴は Memory により `mastra_studio/memory.db` (SQLite/libsql) に永続化されるため、
 Mastra Studio を再起動しても同じスレッドの続きから対話できる。
 新しい会話を始めたい場合は Studio 上で新規スレッドを作成する。
 履歴をすべて消すには `memory.db` (と派生の `memory.db-shm` / `memory.db-wal` があればそれも) を削除する。
@@ -159,7 +159,7 @@ terraform destroy
   Terraform を別のプリンシパルで実行するようになった場合は、旧プリンシパルで先に `terraform apply` してポリシーを更新すること
 - AWS 認証情報を扱うのは `mastra dev` サーバー (Node) のみで、Mastra Studio を表示するブラウザには露出しない
 
-## 環境変数 (mastra_react/.env)
+## 環境変数 (mastra_studio/.env)
 
 | 変数 | デフォルト | 説明 |
 | --- | --- | --- |
@@ -172,7 +172,7 @@ terraform destroy
 
 ```bash
 # アプリ
-cd mastra_react
+cd mastra_studio
 npm run typecheck  # tsc -b
 npm run lint       # oxlint
 

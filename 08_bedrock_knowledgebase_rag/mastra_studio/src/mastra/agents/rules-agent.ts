@@ -40,7 +40,7 @@ const SYSTEM_PROMPT = `あなたは社内規則に関する質問に答えるア
 
 // 会話履歴の保存先 SQLite ファイル。libsql の file: URL は実行時カレントディレクトリ
 // 相対で解釈されるため、実行場所に依存しないようこのファイル基準の絶対パスを組み立てる
-// (mastra_react ディレクトリ直下の memory.db。05_mastra_memory_bedrock と同じ配置方針)。
+// (mastra_studio ディレクトリ直下の memory.db。05_mastra_memory_bedrock と同じ配置方針)。
 const MEMORY_DB_PATH = path.join(import.meta.dirname, '..', '..', '..', 'memory.db');
 
 //============================================================

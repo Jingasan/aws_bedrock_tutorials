@@ -1,6 +1,9 @@
+import path from 'node:path';
 import { createAmazonBedrockAnthropic } from '@ai-sdk/amazon-bedrock/anthropic';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 import { Agent } from '@mastra/core/agent';
+import { LibSQLStore } from '@mastra/libsql';
+import { Memory } from '@mastra/memory';
 import { searchRulesTool } from '../tools/search-rules-tool';
 
 //============================================================
@@ -35,6 +38,34 @@ const SYSTEM_PROMPT = `あなたは社内規則に関する質問に答えるア
 - 規則の解釈が複数考えられる場合は、その両方を示し、最終判断は担当部署に確認するよう案内する。
 - 社内規則と無関係な雑談や一般的な質問には、検索せずに簡潔に応答してよい。`;
 
+// 会話履歴の保存先 SQLite ファイル。libsql の file: URL は実行時カレントディレクトリ
+// 相対で解釈されるため、実行場所に依存しないようこのファイル基準の絶対パスを組み立てる
+// (mastra_react ディレクトリ直下の memory.db。05_mastra_memory_bedrock と同じ配置方針)。
+const MEMORY_DB_PATH = path.join(import.meta.dirname, '..', '..', '..', 'memory.db');
+
+//============================================================
+// Mastra Memory
+// 会話履歴を SQLite (libsql) ファイルに永続化する (05_mastra_memory_bedrock と同じ構成)。
+// 08 は Mastra Studio から利用するため、05 のような thread/resource の環境変数管理は
+// 行わない (Studio がスレッド選択 UI を提供するため不要。06_mastra_studio_bedrock と同じ判断)。
+//============================================================
+
+const memory = new Memory({
+  // 履歴の保存先ストレージ (libsql)。rulesAgent 専用の DB ファイルに保存する
+  storage: new LibSQLStore({
+    // ストレージの識別子
+    id: 'rules-agent-memory-storage',
+    // 保存先 SQLite ファイル (file: + 絶対パス)
+    url: `file:${MEMORY_DB_PATH}`,
+  }),
+  options: {
+    // モデルへ注入する直近メッセージ件数。
+    // searchRules ツールの出力 (規則の抜粋) は 1 件あたりのサイズが大きいため、
+    // 05/06 の既定値 10 ではなく、フロントエンド削除前の履歴上限と同じ 6 件に絞ってコストを抑える。
+    lastMessages: 6,
+  },
+});
+
 //============================================================
 // Bedrock プロバイダーとエージェント定義
 // Mastra のモデルルーター ("provider/model" 文字列) に Bedrock プロバイダーは存在しない
@@ -52,13 +83,10 @@ const bedrockAnthropic = createAmazonBedrockAnthropic({
 
 // Bedrock Knowledge Base の検索ツールを使って社内規則の質問に答えるエージェント (Agentic RAG)。
 // RetrieveAndGenerate API ではなく Retrieve + ツール呼び出しにすることで、生成モデル・
-// プロンプト・ストリーミングを 07 と同じ構成のまま Mastra 側で制御でき、
-// 出典情報を UI に渡せる。
-// React フロントエンドの useChat が毎リクエストで全メッセージ履歴を送信するため、
-// サーバー側での履歴永続化 (Memory) は付けない最小構成とする (07 と同じ)。
+// プロンプトを Mastra 側で制御でき、出典情報をツール出力として確認できる。
+// 会話履歴は Memory (上記) で永続化し、Mastra Studio からスレッドを選択して対話する。
 export const rulesAgent = new Agent({
-  // エージェントの一意識別子。chatRoute の URL パス (/chat/rules-agent) がこの id で
-  // エージェントを解決するため、フロントエンドの接続先と一致させること。
+  // エージェントの一意識別子。Mastra Studio 上での表示・識別に用いられる。
   id: 'rules-agent',
   // エージェントの表示名
   name: 'Company Rules Agent',
@@ -68,7 +96,20 @@ export const rulesAgent = new Agent({
   instructions: SYSTEM_PROMPT,
   // AI SDK のモデルインスタンス
   model: bedrockAnthropic(MODEL_ID),
-  // 利用可能なツール。キー名 (searchRules) がモデルに提示されるツール名となり、
-  // フロントエンドでは UIMessage の part.type === 'tool-searchRules' として現れる。
+  // 利用可能なツール。キー名 (searchRules) がモデルに提示されるツール名となる。
   tools: { searchRules: searchRulesTool },
+  // 会話履歴の永続化 (上記 Memory インスタンス)
+  memory,
+  // generate/stream (Mastra Studio からの呼び出しを含む) の既定オプション。
+  defaultOptions: {
+    // ツール呼び出し → 結果を受けた再生成 のループ上限。
+    // システムプロンプトで再検索を最大 3 回に制限しているため、
+    // 検索 3 回 + 最終回答 1 回 = 4 ステップに余裕を持たせて 5 とする (コスト暴走防止)。
+    maxSteps: 5,
+    modelSettings: {
+      // 応答の最大出力トークン数。無指定だとモデル上限まで生成され得るため、
+      // 1 ターンあたりのコスト上限として明示する。
+      maxOutputTokens: 4096,
+    },
+  },
 });

@@ -1,6 +1,6 @@
 # Bedrock Knowledge Bases による社内規則 RAG チャット
 
-社内規則の PDF を Amazon Bedrock Knowledge Bases に取り込み、07 の Mastra + React AI チャットから
+社内規則の PDF を Amazon Bedrock Knowledge Bases に取り込み、Mastra + Mastra Studio から
 検索・回答できるようにする RAG (Retrieval-Augmented Generation) のチュートリアル。
 
 ## 構成
@@ -13,7 +13,7 @@
                          [Bedrock Knowledge Base] ──保存──> [S3 Vectors インデックス]
                                       ▲ Retrieve API (質問文を埋め込み → 類似チャンク検索)
                                       │
-ブラウザ (React useChat) ──> mastra dev (chatRoute) ──> rulesAgent + searchRules ツール ──> Claude Sonnet 5 (global)
+Mastra Studio (mastra dev のプレイグラウンド) ──> rulesAgent + searchRules ツール ──> Claude Sonnet 5 (global)
 ```
 
 2 種類のモデルを役割分担で使う。
@@ -28,10 +28,11 @@
   - `s3_vectors.tf` … ベクトルストア (S3 Vectors バケット + インデックス)
   - `iam_kb_role.tf` … Knowledge Base のサービスロール (最小権限)
   - `knowledge_base.tf` … Knowledge Base 本体と S3 データソース (階層チャンク)
-- `mastra_react/` … 07 をベースにしたアプリ
+- `mastra_react/` … Mastra サーバー本体 (専用フロントエンドは持たず Mastra Studio から利用する)
   - `src/mastra/tools/search-rules-tool.ts` … Retrieve API を呼ぶ Mastra ツール
-  - `src/mastra/agents/rules-agent.ts` … 検索ツールを使って規則 QA を行うエージェント (Agentic RAG)
-  - `src/App.tsx` … 検索状況と参照した規則 (ファイル名・ページ) を表示するチャット UI
+  - `src/mastra/agents/rules-agent.ts` … 検索ツールを使って規則 QA を行うエージェント (Agentic RAG)。
+    会話履歴は `@mastra/memory` + `@mastra/libsql` で `memory.db` に永続化する ([05_mastra_memory_bedrock](../05_mastra_memory_bedrock/README.md) と同じ構成)
+  - `src/mastra/index.ts` … Mastra インスタンスのエントリーポイント
 
 ## 設計判断
 
@@ -48,12 +49,12 @@
 ### RAG 方式に Retrieve + ツール呼び出し (Agentic RAG) を採用
 
 Knowledge Bases には検索と回答生成をまとめて行う `RetrieveAndGenerate` API もあるが、
-生成モデルが KB 側に固定され、03〜07 で使ってきたグローバル推論プロファイル + ストリーミング +
-`useChat` の構成を維持できない。`Retrieve` API を Mastra ツールとして Claude に渡すことで、
+生成モデルが KB 側に固定され、03〜07 で使ってきたグローバル推論プロファイル + ストリーミングの
+構成を維持できない。`Retrieve` API を Mastra ツールとして Claude に渡すことで、
 
 - 生成モデル・システムプロンプト・出力上限を Mastra 側で制御できる
 - Claude が質問を検索向きの語彙に言い換えたり、必要なら再検索したりできる
-- 出典 (ファイル名・ページ) をツール出力として UI に表示できる
+- 出典 (ファイル名・ページ) をツール出力として Mastra Studio 上で確認できる
 
 ### チャンク戦略に HIERARCHICAL を採用
 
@@ -65,9 +66,10 @@ Knowledge Bases には検索と回答生成をまとめて行う `RetrieveAndGen
 - 埋め込み: Titan V2 は $0.02/1M トークン。数十 PDF の取り込みでも数円〜数十円
 - 生成: 実際のコスト支配要因。以下で上限を設ける
   - 検索 1 回の取得件数は既定 5 件・上限 10 件 (`search-rules-tool.ts`)
-  - ツール呼び出しループは最大 5 ステップ (`src/mastra/index.ts` の `maxSteps`)
-  - 応答の最大出力トークン数は 4096
-  - フロントエンドから送る履歴は直近 6 件 (検索結果を含むため 07 より少なめ)
+  - ツール呼び出しループは最大 5 ステップ (`src/mastra/agents/rules-agent.ts` の `defaultOptions.maxSteps`)
+  - 応答の最大出力トークン数は 4096 (同 `defaultOptions.modelSettings.maxOutputTokens`)
+  - Memory がモデルへ注入する会話履歴は直近 6 件 (`Memory` の `options.lastMessages`)。
+    searchRules ツールの出力 (規則の抜粋) は 1 件あたりのサイズが大きいため、05/06 の既定値 10 より少なめにしている
 
 ## 前提
 
@@ -121,19 +123,23 @@ cp .env.example .env
 # .env の BEDROCK_KNOWLEDGE_BASE_ID に terraform output knowledge_base_id の値を設定する
 ```
 
-ターミナルを 2 つ使い、バックエンドとフロントエンドをそれぞれ起動する。
-
 ```bash
-# ターミナル 1: Mastra バックエンド (http://localhost:4111)
-npm run dev:mastra
-
-# ターミナル 2: Vite フロントエンド (http://localhost:5173)
 npm run dev
 ```
 
-ブラウザで http://localhost:5173 を開き、社内規則について質問する。
-Claude が `searchRules` ツールで規則を検索し (UI に検索クエリと参照ファイルが表示される)、
+ブラウザで http://localhost:4111 を開くと Mastra Studio (組み込みプレイグラウンド) が起動する。
+`rules-agent` を選択し、社内規則について質問する。
+Claude が `searchRules` ツールで規則を検索し (ツール呼び出しの経過と参照ファイルが表示される)、
 検索結果に基づいて回答する。
+
+会話履歴は Memory により `mastra_react/memory.db` (SQLite/libsql) に永続化されるため、
+Mastra Studio を再起動しても同じスレッドの続きから対話できる。
+新しい会話を始めたい場合は Studio 上で新規スレッドを作成する。
+履歴をすべて消すには `memory.db` (と派生の `memory.db-shm` / `memory.db-wal` があればそれも) を削除する。
+
+```bash
+rm memory.db
+```
 
 ### 4. 後片付け
 
@@ -151,7 +157,7 @@ terraform destroy
   旧バージョンはライフサイクルで 30 日後に失効
 - ベクトルバケット: バケットポリシーで Knowledge Base サービスロールと Terraform 実行者以外のアクセスを拒否 (多層防御)。
   Terraform を別のプリンシパルで実行するようになった場合は、旧プリンシパルで先に `terraform apply` してポリシーを更新すること
-- AWS 認証情報を扱うのは `mastra dev` サーバー (Node) のみで、ブラウザには露出しない
+- AWS 認証情報を扱うのは `mastra dev` サーバー (Node) のみで、Mastra Studio を表示するブラウザには露出しない
 
 ## 環境変数 (mastra_react/.env)
 
@@ -161,14 +167,13 @@ terraform destroy
 | `AWS_REGION` | `ap-northeast-1` | Knowledge Base / bedrock-runtime のリージョン |
 | `BEDROCK_MODEL_ID` | `global.anthropic.claude-sonnet-5` | 回答生成に使うモデル (グローバル推論プロファイル) |
 | `BEDROCK_KNOWLEDGE_BASE_ID` | (必須) | 検索対象の Knowledge Base ID (`terraform output knowledge_base_id`) |
-| `VITE_CHAT_API_URL` | `http://localhost:4111/chat/rules-agent` | フロントエンドが接続するチャット API |
 
 ## 検証コマンド
 
 ```bash
 # アプリ
 cd mastra_react
-npm run typecheck  # tsc -b (app / node / mastra の 3 プロジェクト)
+npm run typecheck  # tsc -b
 npm run lint       # oxlint
 
 # インフラ

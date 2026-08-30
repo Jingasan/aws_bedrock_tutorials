@@ -1,0 +1,26 @@
+{
+  "name": "09_bedrock_guardrails",
+  "version": "1.0.0",
+  "description": "Amazon Bedrock Guardrails をモデル呼び出しにアタッチした Mastra Memory 対話型チャットスクリプト",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "chat": "node src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^5.0.61",
+    "@aws-sdk/credential-providers": "^3.1116.0",
+    "@mastra/core": "^1.61.0",
+    "@mastra/libsql": "^1.21.1",
+    "@mastra/memory": "^1.27.0",
+    "ai": "^7.0.77"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^7.0.2"
+  }
+}
